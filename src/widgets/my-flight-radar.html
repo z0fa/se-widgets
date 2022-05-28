@@ -36,13 +36,22 @@
           const { geoX2, geoY2 } = settings
           // const { geoX1, geoY1 } = { geoX1: 45.56, geoY1: 8.37 }
           // const { geoX2, geoY2 } = { geoX2: 45.62, geoY2: 8.46 }
-          // https://heyman.github.io/leaflet-areaselect/example/
 
+          const { updateItems, addedItems, removedItems } = useArrayInOut()
+          const { client } = useTmi(username, oauthToken, channel)
+          const { scan } = useFlightRadar()
+          const { onWidgetButtonClick } = useStreamElements()
           const animating = ref(false)
-          const playAnimation = () => {
+
+          const announce = (plate, id) => {
             if (animating.value) {
               return
             }
+
+            client.say(
+              channel,
+              `Aereo avvistato! 🛩️ ${`https://www.flightradar24.com/${plate}/${id}`}`
+            )
 
             animating.value = true
             const audio = new Audio(soundAlert)
@@ -53,22 +62,17 @@
             }, 6500)
           }
 
-          const { updateItems, addedItems, removedItems } = useArrayInOut()
-          const { client } = useTmi(username, oauthToken, channel)
-          const { scan } = useFlightRadar()
-          const { onWidgetButtonClick } = useStreamElements()
+          onWidgetButtonClick((data) => {
+            const { field } = data
 
-          client.on("message", (channel, tags, message, self) => {
-            if (self) {
-              return
-            }
-
-            if (message.toLowerCase().startsWith("!testplane")) {
-              playAnimation()
+            if (field === "geoOpen") {
+              window.open(
+                "https://heyman.github.io/leaflet-areaselect/example/"
+              )
+            } else if (field === "testPlane") {
+              announce("test", "test")
             }
           })
-
-          onWidgetButtonClick((data) => console.log({ data }))
 
           const polling = async () => {
             try {
@@ -84,13 +88,7 @@
 
               if (newPlanes.length > 0) {
                 const plane = newPlanes[0]
-
-                client.say(
-                  channel,
-                  `Aereo avvistato! 🛩️ ${`https://www.flightradar24.com/${plane.plate}/${plane.id}`}`
-                )
-
-                playAnimation()
+                announce(plane.plate, plane.id)
               }
             } catch (error) {
               console.error(error)
