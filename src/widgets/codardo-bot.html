@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head></head>
+  <body>
+    <div id="app" v-cloak></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/js-markov@3.0.3/dist/markov.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/whatsapp-chat-parser@3.2.1/dist/whatsapp-chat-parser.min.js"></script>
+    <script type="module">
+      import {
+        createApp,
+        ref,
+      } from "https://cdn.jsdelivr.net/npm/vue@3.2.36/dist/vue.esm-browser.js"
+      import useTmi from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useTmi.js"
+      import useStreamElements from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useStreamElements.js"
+      import useCoDArdi from "../composables/useCoDArdi.js"
+
+      const app = createApp({
+        setup(props, ctx) {
+          const settings = {
+            channel: "{{channel}}".toLowerCase(),
+            username: "{{botUsername}}".toLowerCase(),
+            oauthToken: "{{botToken}}",
+            messages: "{{messages}}",
+            replyChance: parseInt("{{replyChance}}") / 100,
+            speakChance: parseInt("{{speakChance}}") / 100,
+            speakDelay: parseInt("{{speakDelay}}") / 100,
+            ttsChance: parseInt("{{ttsChance}}") * 1000,
+          }
+
+          const { username, channel, oauthToken } = settings
+          const { messages } = settings
+          const { replyChance, speakChance, speakDelay, ttsChance } = settings
+
+          const { generateMessage } = useCoDArdi(messages)
+
+          const speak = async (client, channel, tts) => {
+            try {
+              const msg = generateMessage()
+              client.say(channel, msg)
+              if (tts) {
+                speechSynthesis.speak(new SpeechSynthesisUtterance(msg))
+              }
+            } catch (error) {
+              console.error(error)
+            }
+          }
+
+          const { client } = useTmi(username, oauthToken, channel)
+
+          client.on("message", (channel, tags, message, self) => {
+            if (self) {
+              return
+            }
+
+            if (
+              message.toLowerCase().includes(`@${username}`) &&
+              message.toLowerCase().includes("parlami")
+            ) {
+              speak(client, channel, true)
+            } else if (message.toLowerCase().includes(`@${username}`)) {
+              speak(client, channel, false)
+            } else if (replyChance > 0 && Math.random() < replyChance) {
+              speak(client, channel, false)
+            }
+          })
+
+          setInterval(() => {
+            if (speakChance > 0 && Math.random() < speakChance) {
+              speak(client, channel, ttsChance > 0 && Math.random() < ttsChance)
+            }
+          }, speakDelay)
+
+          return {}
+        },
+      })
+
+      app.mount("#app")
+    </script>
+
+    <style>
+      [v-cloak] {
+        display: none;
+      }
+    </style>
+
+    <!--
+      {
+        "channel": {
+          "type": "text",
+          "label": "Channel name",
+          "value": "changeme"
+        },
+        "botUsername": {
+          "type": "text",
+          "label": "BOT username",
+          "value": "changeme"
+        },
+        "botToken": {
+          "type": "text",
+          "label": "BOT auth token",
+          "value": "changeme"
+        },
+        "messages": {
+          "type": "text",
+          "label": "WA messages",
+          "value": ""
+        },
+        "replyChance": {
+          "type": "slider",
+          "label": "Reply chance",
+          "value": 5,
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        "speakChance": {
+          "type": "slider",
+          "label": "Speak chance",
+          "value": 1,
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        "speakDelay": {
+          "type": "slider",
+          "label": "Speak delay (in seconds)",
+          "value": 10,
+          "min": 5,
+          "max": 120,
+          "step": 1
+        },
+        "ttsChance": {
+          "type": "slider",
+          "label": "TTS chance",
+          "value": 1,
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        "testMessage": {
+          "type": "button",
+          "label": "Test message"
+        }
+      }
+    -->
+  </body>
+</html>

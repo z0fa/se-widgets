@@ -2,7 +2,7 @@
 <html lang="en">
   <head></head>
   <body>
-    <div id="app">
+    <div id="app" v-cloak>
       <img id="airplane" src="{{image}}" alt="" v-if="animating" />
     </div>
 
@@ -19,23 +19,20 @@
       const app = createApp({
         setup(props, ctx) {
           const settings = {
-            channel: "{{channel}}",
-            username: "{{botUsername}}",
+            channel: "{{channel}}".toLowerCase(),
+            username: "{{botUsername}}".toLowerCase(),
             oauthToken: "{{botToken}}",
-            checkDelay: parseInt("{{checkDelay}}"),
+            checkDelay: parseInt("{{checkDelay}}") * 1000,
             geoX1: parseFloat("{{geoX1}}"),
             geoY1: parseFloat("{{geoY1}}"),
             geoX2: parseFloat("{{geoX2}}"),
             geoY2: parseFloat("{{geoY2}}"),
+            soundAlert: "{{soundAlert}}",
           }
 
           const { channel, username, oauthToken } = settings
-          const checkDelay = settings.checkDelay * 1000
-          // const checkDelay = 10000
-          const { geoX1, geoY1 } = settings
-          const { geoX2, geoY2 } = settings
-          // const { geoX1, geoY1 } = { geoX1: 45.56, geoY1: 8.37 }
-          // const { geoX2, geoY2 } = { geoX2: 45.62, geoY2: 8.46 }
+          const { checkDelay, soundAlert } = settings
+          const { geoX1, geoY1, geoX2, geoY2 } = settings
 
           const { updateItems, addedItems, removedItems } = useArrayInOut()
           const { client } = useTmi(username, oauthToken, channel)
@@ -65,11 +62,7 @@
           onWidgetButtonClick((data) => {
             const { field } = data
 
-            if (field === "geoOpen") {
-              window.open(
-                "https://heyman.github.io/leaflet-areaselect/example/"
-              )
-            } else if (field === "testPlane") {
+            if (field === "testPlane") {
               announce("test", "test")
             }
           })
@@ -109,6 +102,10 @@
     </script>
 
     <style>
+      [v-cloak] {
+        display: none;
+      }
+
       #airplane {
         position: fixed;
         top: 50px;
@@ -145,6 +142,14 @@
 
     <!--
       {
+        "image": {
+          "type": "image-input",
+          "label": "Airplane image"
+        },
+        "soundAlert": {
+          "type": "sound-input",
+          "label": "Sound alert"
+        },
         "channel": {
           "type": "text",
           "label": "Channel name",
@@ -169,8 +174,8 @@
           "step": 1
         },
         "geoOpen": {
-          "type": "button",
-          "label": "Open geo picker"
+          "type": "text",
+          "label": "Geo picker: shorturl.at/svHNU"
         },
         "geoX1": {
           "type": "number",
