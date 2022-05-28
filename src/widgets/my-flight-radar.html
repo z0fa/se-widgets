@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head></head>
+  <body>
+    <div id="app">
+      <img id="airplane" src="{{image}}" alt="" v-if="animating" />
+    </div>
+
+    <script type="module">
+      import {
+        createApp,
+        ref,
+      } from "https://cdn.jsdelivr.net/npm/vue@3.2.36/dist/vue.esm-browser.js"
+      import useTmi from "../composables/useTmi.js"
+      import useArrayInOut from "../composables/useArrayInOut.js"
+      import useFlightRadar from "../composables/useFlightRadar.js"
+      import useStreamElements from "../composables/useStreamElements.js"
+
+      const app = createApp({
+        setup(props, ctx) {
+          const settings = {
+            channel: "{{channel}}",
+            username: "{{botUsername}}",
+            oauthToken: "{{botToken}}",
+            checkDelay: parseInt("{{checkDelay}}"),
+            geoX1: parseFloat("{{geoX1}}"),
+            geoY1: parseFloat("{{geoY1}}"),
+            geoX2: parseFloat("{{geoX2}}"),
+            geoY2: parseFloat("{{geoY2}}"),
+          }
+
+          const { channel, username, oauthToken } = settings
+          const checkDelay = settings.checkDelay * 1000
+          // const checkDelay = 10000
+          const { geoX1, geoY1 } = settings
+          const { geoX2, geoY2 } = settings
+          // const { geoX1, geoY1 } = { geoX1: 45.56, geoY1: 8.37 }
+          // const { geoX2, geoY2 } = { geoX2: 45.62, geoY2: 8.46 }
+          // https://heyman.github.io/leaflet-areaselect/example/
+
+          const animating = ref(false)
+          const playAnimation = () => {
+            if (animating.value) {
+              return
+            }
+
+            animating.value = true
+            const audio = new Audio(soundAlert)
+            audio.volume = 0.4
+            audio.play()
+            setTimeout(() => {
+              animating.value = false
+            }, 6500)
+          }
+
+          const { updateItems, addedItems, removedItems } = useArrayInOut()
+          const { client } = useTmi(username, oauthToken, channel)
+          const { scan } = useFlightRadar()
+          const { onWidgetButtonClick } = useStreamElements()
+
+          client.on("message", (channel, tags, message, self) => {
+            if (self) {
+              return
+            }
+
+            if (message.toLowerCase().startsWith("!testplane")) {
+              playAnimation()
+            }
+          })
+
+          onWidgetButtonClick((data) => console.log({ data }))
+
+          const polling = async () => {
+            try {
+              const response = await scan(geoX1, geoY1, geoX2, geoY2)
+
+              const planesPlates = response.map((plane) => plane.plate)
+
+              updateItems(planesPlates)
+
+              const newPlanes = response.filter((plane) =>
+                addedItems.value.includes(plane.plate)
+              )
+
+              if (newPlanes.length > 0) {
+                const plane = newPlanes[0]
+
+                client.say(
+                  channel,
+                  `Aereo avvistato! 🛩️ ${`https://www.flightradar24.com/${plane.plate}/${plane.id}`}`
+                )
+
+                playAnimation()
+              }
+            } catch (error) {
+              console.error(error)
+            }
+
+            await new Promise((resolve) => setTimeout(polling, checkDelay))
+          }
+
+          polling()
+
+          return {
+            animating,
+          }
+        },
+      })
+
+      app.mount("#app")
+    </script>
+
+    <style>
+      #airplane {
+        position: fixed;
+        top: 50px;
+        width: 150px;
+        animation: fly 6.5s linear;
+        left: -200px;
+      }
+
+      @keyframes fly {
+        100% {
+          left: 100%;
+        }
+
+        15% {
+          top: 60px;
+        }
+        30% {
+          top: 45px;
+        }
+        45% {
+          top: 55px;
+        }
+        60% {
+          top: 40px;
+        }
+        75% {
+          top: 50px;
+        }
+        90% {
+          top: 55px;
+        }
+      }
+    </style>
+
+    <!--
+      {
+        "channel": {
+          "type": "text",
+          "label": "Channel name",
+          "value": "changeme"
+        },
+        "botUsername": {
+          "type": "text",
+          "label": "BOT username",
+          "value": "changeme"
+        },
+        "botToken": {
+          "type": "text",
+          "label": "BOT auth token",
+          "value": "changeme"
+        },
+        "checkDelay": {
+          "type": "slider",
+          "label": "Check delay (in seconds)",
+          "value": 10,
+          "min": 5,
+          "max": 60,
+          "step": 1
+        },
+        "geoOpen": {
+          "type": "button",
+          "label": "Open geo picker"
+        },
+        "geoX1": {
+          "type": "number",
+          "label": "Geo X1",
+          "value": -1
+        },
+        "geoY1": {
+          "type": "number",
+          "label": "Geo Y1",
+          "value": -1
+        },
+        "geoX2": {
+          "type": "number",
+          "label": "Geo X2",
+          "value": -1
+        },
+        "geoY2": {
+          "type": "number",
+          "label": "Geo Y2",
+          "value": -1
+        },
+        "testPlane": {
+          "type": "button",
+          "label": "Test plane"
+        }
+      }
+    -->
+  </body>
+</html>
