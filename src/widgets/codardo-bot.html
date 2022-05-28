@@ -13,7 +13,7 @@
       } from "https://cdn.jsdelivr.net/npm/vue@3.2.36/dist/vue.esm-browser.js"
       import useTmi from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useTmi.js"
       import useStreamElements from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useStreamElements.js"
-      import useCoDArdi from "../composables/useCoDArdi.js"
+      import useCoDArdi from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useCoDArdi.js"
 
       const app = createApp({
         setup(props, ctx) {
@@ -21,18 +21,20 @@
             channel: "{{channel}}".toLowerCase(),
             username: "{{botUsername}}".toLowerCase(),
             oauthToken: "{{botToken}}",
-            messages: "{{messages}}",
+            msgSource: "{{msgSource}}",
             replyChance: parseInt("{{replyChance}}") / 100,
             speakChance: parseInt("{{speakChance}}") / 100,
-            speakDelay: parseInt("{{speakDelay}}") / 100,
-            ttsChance: parseInt("{{ttsChance}}") * 1000,
+            speakDelay: parseInt("{{speakDelay}}") * 1000,
+            ttsChance: parseInt("{{ttsChance}}") / 100,
           }
 
           const { username, channel, oauthToken } = settings
-          const { messages } = settings
+          const { msgSource } = settings
           const { replyChance, speakChance, speakDelay, ttsChance } = settings
 
-          const { generateMessage } = useCoDArdi(messages)
+          const { generateMessage } = useCoDArdi(msgSource)
+          const { client } = useTmi(username, oauthToken, channel)
+          const { onWidgetButtonClick } = useStreamElements()
 
           const speak = async (client, channel, tts) => {
             try {
@@ -46,7 +48,13 @@
             }
           }
 
-          const { client } = useTmi(username, oauthToken, channel)
+          onWidgetButtonClick((data) => {
+            const { field } = data
+
+            if (field === "testMessage") {
+              speak(client, channel, Math.random() > 0.5)
+            }
+          })
 
           client.on("message", (channel, tags, message, self) => {
             if (self) {
@@ -101,9 +109,9 @@
           "label": "BOT auth token",
           "value": "changeme"
         },
-        "messages": {
+        "msgSource": {
           "type": "text",
-          "label": "WA messages",
+          "label": "WA messages source",
           "value": ""
         },
         "replyChance": {

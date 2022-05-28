@@ -1,11 +1,12 @@
 import { ref } from "https://cdn.jsdelivr.net/npm/vue@3.2.36/dist/vue.esm-browser.js"
 
-export default function useCoDArdi(waMessages) {
+export default function useCoDArdi(msgSource) {
   const ready = ref(false)
   const markov = new Markov()
 
   const init = async () => {
-    const chat = await whatsappChatParser.parseString(waMessages)
+    const messages = await fetch(msgSource).then((r) => r.text())
+    const chat = await whatsappChatParser.parseString(messages)
     const states = chat
       .filter((x) => x.author !== "System")
       .map((x) =>
