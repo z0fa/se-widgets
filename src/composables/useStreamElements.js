@@ -19,8 +19,8 @@ export default function useStreamElements(params) {
   }
 
   const handleEvent = (params) => {
-    const eventName = obj.detail.listener
-    const eventData = obj["detail"]["event"]
+    const eventName = params.detail.listener
+    const eventData = params["detail"]["event"]
     const handlers = eventHandlers.value[eventName] ?? []
 
     handlers.forEach((fn) => {
