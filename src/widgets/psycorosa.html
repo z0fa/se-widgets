@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head></head>
+  <body>
+    <div id="app" v-cloak>
+      <div id="mv-wrapper" v-once>
+        <div id="name">{{ unitName }}</div>
+        <div id="guild">{{ unitTitle }}</div>
+        <div id="modelviewer" style="width: {{size}}px;"></div>
+      </div>
+    </div>
+
+    <script>
+      window.WH = {
+        debug(...args) {
+          // console.log(args)
+        },
+        defaultAnimation: "Stand",
+      }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://wow.zamimg.com/modelviewer/live/viewer/viewer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.10.4/dist/gsap.min.js"></script>
+
+    <script type="module">
+      import {
+        createApp,
+        ref,
+        watchEffect,
+        onMounted,
+        nextTick,
+      } from "https://cdn.jsdelivr.net/npm/vue@3.2.36/dist/vue.esm-browser.js"
+
+      const app = createApp({
+        setup(props, ctx) {
+          const settings = {
+            zoom: parseInt("{{zoom}}"),
+            size: parseInt("{{size}}"),
+            fps: parseInt("{{fps}}"),
+            modelData: JSON.parse(`{{modelData}}`),
+            unitName: "{{unitName}}",
+            unitTitle: "{{unitTitle}}",
+          }
+
+          const { zoom, size, fps, modelData } = settings
+          const { unitName, unitTitle } = settings
+
+          const walkPointMin = -size
+          const walkPointMax = window.innerWidth
+          const walkPointCenter = Math.floor((walkPointMax / 2) - (size / 2))
+
+          const modelviewer = ref(null)
+          const ready = ref(false)
+          const looping = ref(false)
+          const currentPoint = ref(walkPointCenter)
+          const animations = [
+            "ReadyUnarmed",
+            "Cower",
+            "Whirlwind",
+            "BattleRoar",
+            "KneelLoop",
+            "UseStandingLoop",
+            "StealthStand",
+            "EmoteKneel",
+            "EmoteEat",
+            "EmoteKiss",
+            "EmotePoint",
+            "EmoteTalk",
+            "SitGround",
+            "Sleep",
+            "Stormstrike",
+            "EmoteNo",
+            "EmoteShout",
+            "EmoteTrain",
+            "EmoteYes",
+            "EmoteApplaud",
+            "EmoteSalute",
+            "EmoteWave",
+            "EmoteBeg",
+            "EmoteBow",
+            "EmoteCheer",
+            "EmoteChicken",
+            "EmoteCry",
+            "EmoteFlex",
+            "EmoteLaugh",
+            "EmoteRoar",
+            "EmoteRude",
+            "EmoteShy",
+            "EmoteSniff",
+            "EmoteTalkQuestion",
+            "EmoteDance",
+            "EmoteTalkExclamation",
+            "Stun",
+          ]
+
+          watchEffect(() => {
+            if (!looping.value && ready.value) {
+              looping.value = true
+              loop()
+            }
+          })
+
+          const rnd = (min, max) => {
+            min = Math.ceil(min)
+            max = Math.floor(max)
+            return Math.floor(Math.random() * (max - min + 1) + min)
+          }
+
+          class WowModelViewer extends ZamModelViewer {
+            constructor(...args) {
+              super(...args)
+
+              this.renderer._updateProgress = this.renderer.updateProgress
+              this.renderer.updateProgress = (...args) => {
+                this.renderer._updateProgress(...args)
+                ready.value = Object.keys(this.renderer.downloads).length === 0
+              }
+
+              let now
+              let then = Date.now()
+              let interval = 1000 / fps
+              let delta
+
+              this.renderer._draw = this.renderer.draw
+              this.renderer.draw = (...args) => {
+                now = Date.now()
+                delta = now - then
+                if (delta > interval) {
+                  then = now - (delta % interval)
+                  this.renderer._draw(...args)
+                }
+              }
+            }
+
+            playAnimation(val) {
+              this.renderer.models[0].setAnimation(val)
+            }
+
+            getAnimations() {
+              return [...new Set(this.renderer.models[0].an.map((e) => e.j))]
+            }
+
+            setZoom(val) {
+              super.setZoom(val)
+            }
+
+            setCamera(x, y) {
+              const dtr = (d) => (d * Math.PI) / 180.0
+              this.renderer.azimuth = dtr(x)
+              this.renderer.zenith = dtr(y)
+            }
+
+            setPosition(x, y) {
+              this.renderer.setTranslation(x, y, 0)
+            }
+          }
+
+          const init = () => {
+            ready.value = false
+
+            const wrapper = document.querySelector("#mv-wrapper")
+
+            wrapper.style.left = `${currentPoint.value}px`
+
+            modelviewer.value = new WowModelViewer({
+              ...modelData,
+              container: jQuery("#modelviewer"),
+              background: null,
+            })
+
+            modelviewer.value.setZoom(zoom)
+            modelviewer.value.setCamera(90, 270)
+          }
+
+          const loop = () => {
+            if (!ready.value) {
+              looping.value = false
+              return
+            }
+
+            const randomPoint = rnd(walkPointMin, walkPointMax)
+            const randomAnimation = animations[rnd(0, animations.length - 1)]
+            const randomAction = rnd(0, 2)
+
+            if (randomAction === 0) {
+              playAnimation(randomAnimation, 90, rnd(3, 10), wait)
+            } else if (randomAction === 1) {
+              moveTo(randomPoint, 5, wait)
+            } else if (randomAction === 2) {
+              moveTo(randomPoint, 10, wait)
+            }
+          }
+
+          const wait = () => {
+            playAnimation("Stand", 90, rnd(2, 10), loop)
+          }
+
+          const playAnimation = (animation, facing, duration, onEnd) => {
+            modelviewer.value.setCamera(facing, 270)
+            modelviewer.value.playAnimation(animation)
+
+            if (duration > 0) {
+              setTimeout(onEnd, duration * 1000)
+            }
+          }
+
+          const moveTo = (point, speed, onEnd) => {
+            speed = speed * 18
+            const facing = point < currentPoint.value ? 180 : 0
+            const animation = speed >= 180 ? "Run" : "Walk"
+            const distance = Math.abs(point - currentPoint.value)
+
+            playAnimation(animation, facing, 0, onEnd)
+
+            // gsap.ticker.fps(fps)
+
+            const tween = gsap.to("#mv-wrapper", {
+              duration: distance / speed,
+              left: `${point}px`,
+              ease: "none",
+              onComplete() {
+                currentPoint.value = point
+                onEnd()
+              },
+            })
+
+            modelviewer.value.playAnimation(animation)
+          }
+
+          onMounted(async () => {
+            await nextTick()
+            init()
+          })
+
+          return {
+            unitName,
+            unitTitle,
+          }
+        },
+      })
+
+      app.mount("#app")
+    </script>
+
+    <style>
+      @import url("http://fonts.cdnfonts.com/css/friz-quadrata-std");
+
+      [v-cloak] {
+        display: none;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      #app {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      #mv-wrapper {
+        position: absolute;
+      }
+
+      #modelviewer > div {
+        display: none !important;
+      }
+
+      #name,
+      #guild {
+        font-family: "Friz Quadrata Std", sans-serif;
+        text-align: center;
+        color: #0f0;
+      }
+    </style>
+
+    <!--
+      {
+        "modelData": {
+          "type": "text",
+          "label": "WoWHead model data",
+          "value": "{\"type\":2,\"contentPath\":\"https://wow.zamimg.com/modelviewer/live/\",\"container\":{\"0\":{},\"context\":{},\"length\":1},\"aspect\":1.7782204515272244,\"background\":\"background-181818.png\",\"models\":{\"type\":8,\"id\":617},\"hd\":true,\"gameDataEnv\":\"live\",\"dataEnv\":\"live\",\"env\":\"live\"}"
+        },
+        "unitName": {
+          "type": "text",
+          "label": "Unit name",
+          "value": "Murloc"
+        },
+        "unitTitle": {
+          "type": "text",
+          "label": "Unit title",
+          "value": "<RwlRwlRwl>"
+        },
+        "size": {
+          "type": "number",
+          "label": "Model size",
+          "value": 300
+        },
+        "zoom": {
+          "type": "slider",
+          "label": "Zoom",
+          "value": -4,
+          "min": -20,
+          "max": 20,
+          "step": 1
+        },
+        "fps": {
+          "type": "slider",
+          "label": "Fps",
+          "value": 15,
+          "min": 1,
+          "max": 60,
+          "step": 1
+        }
+      }
+    -->
+  </body>
+</html>
