@@ -38,8 +38,9 @@
 
           const speak = async (client, channel, tts) => {
             try {
-              const msg = generateMessage()
+              const msg = await generateMessage()
               client.say(channel, msg)
+
               if (tts) {
                 speechSynthesis.speak(new SpeechSynthesisUtterance(msg))
               }
