@@ -21,7 +21,7 @@
             channel: "{{channel}}".toLowerCase(),
             username: "{{botUsername}}".toLowerCase(),
             oauthToken: "{{botToken}}",
-            msgSource: "{{msgSource}}",
+            messages: "{{messages}}",
             replyChance: parseInt("{{replyChance}}") / 100,
             speakChance: parseInt("{{speakChance}}") / 100,
             speakDelay: parseInt("{{speakDelay}}") * 1000,
@@ -29,10 +29,10 @@
           }
 
           const { username, channel, oauthToken } = settings
-          const { msgSource } = settings
+          const { messages } = settings
           const { replyChance, speakChance, speakDelay, ttsChance } = settings
 
-          const { generateMessage } = useCoDArdi(msgSource)
+          const { generateMessage } = useCoDArdi(messages)
           const { client } = useTmi(username, oauthToken, channel)
           const { onWidgetButtonClick } = useStreamElements()
 
@@ -109,10 +109,9 @@
           "label": "BOT auth token",
           "value": "changeme"
         },
-        "msgSource": {
-          "type": "text",
-          "label": "WA messages source",
-          "value": ""
+        "messages": {
+          "type": "sound-input",
+          "label": "Whatsapp messages"
         },
         "replyChance": {
           "type": "slider",
