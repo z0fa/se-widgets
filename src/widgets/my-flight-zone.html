@@ -35,7 +35,7 @@
           const { geoX1, geoY1, geoX2, geoY2 } = settings
 
           const { updateItems, addedItems, removedItems } = useArrayInOut()
-          const { client } = useTmi(username, oauthToken, channel)
+          const { client } = useTmi(channel, username, oauthToken)
           const { scan } = useFlightRadar()
           const { onWidgetButtonClick } = useStreamElements()
           const animating = ref(false)

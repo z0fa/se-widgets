@@ -6,13 +6,16 @@ import "../libs/tmi.min.js"
 
 const TMIClient = window.tmi.Client
 
-export default function useTmi(username, token, channel) {
+export default function useTmi(channel, username, token) {
   const client = new TMIClient({
     // options: { debug: true },
-    identity: {
-      username,
-      password: token,
-    },
+    identity:
+      username && token
+        ? {
+            username,
+            password: token,
+          }
+        : undefined,
     channels: [channel],
   })
 

@@ -33,7 +33,7 @@
           const { replyChance, speakChance, speakDelay, ttsChance } = settings
 
           const { generateMessage } = useCoDArdi(messages)
-          const { client } = useTmi(username, oauthToken, channel)
+          const { client } = useTmi(channel, username, oauthToken)
           const { onWidgetButtonClick } = useStreamElements()
 
           const speak = async (client, channel, tts) => {
