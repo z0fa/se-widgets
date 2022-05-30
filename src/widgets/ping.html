@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head></head>
+  <body>
+    <div id="app" v-cloak></div>
+
+    <script type="module">
+      import {
+        createApp,
+        ref,
+      } from "https://cdn.jsdelivr.net/npm/vue@3.2.36/dist/vue.esm-browser.js"
+      import useTmi from "../composables/useTmi.js"
+
+      const app = createApp({
+        setup(props, ctx) {
+          const settings = {
+            command: "{{command}}",
+            cooldown: parseInt("{{cooldown}}") * 1000,
+            alert: "{{alert}}",
+            volume: parseInt("{{volume}}") / 100,
+          }
+
+          const { command, cooldown } = settings
+          const { alert, volume } = settings
+
+          const { client } = useTmi("z0fa")
+          const timer = ref(Date.now())
+
+          client.on("message", (channel, tags, message, self) => {
+            if (self) {
+              return
+            }
+
+            if (message.toLowerCase().startsWith(command)) {
+              const now = Date.now()
+
+              if (now - timer.value < cooldown) {
+                return
+              }
+
+              timer.value = now
+
+              const audio = new Audio(alert)
+
+              audio.volume = volume
+              audio.play()
+            }
+          })
+        },
+      })
+
+      app.mount("#app")
+    </script>
+
+    <style>
+      [v-cloak] {
+        display: none;
+      }
+    </style>
+
+    <!--
+      {
+        "command": {
+          "type": "text",
+          "label": "Command",
+          "value": "!ping"
+        },
+        "cooldown": {
+          "type": "slider",
+          "label": "Cooldown (in seconds)",
+          "value": 10,
+          "min": 1,
+          "max": 120,
+          "step": 1
+        },
+        "soundAlert": {
+          "type": "sound-input",
+          "label": "Sound alert"
+        },
+        "volume": {
+          "type": "slider",
+          "label": "Volume",
+          "value": 80,
+          "min": 1,
+          "max": 100,
+          "step": 1
+        }
+      }
+    -->
+  </body>
+</html>
