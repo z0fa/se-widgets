@@ -8,7 +8,7 @@ const TMIClient = window.tmi.Client
 
 export default function useTmi(username, token, channel) {
   const client = new TMIClient({
-    options: { debug: true },
+    // options: { debug: true },
     identity: {
       username,
       password: token,

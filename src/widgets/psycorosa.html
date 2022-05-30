@@ -2,13 +2,13 @@
 <html lang="en">
   <head></head>
   <body>
-    <div id="app" v-cloak>
-      <div id="mv-wrapper" v-once>
-        <div id="name">{{ unitName }}</div>
-        <div id="guild">{{ unitTitle }}</div>
-        <div id="modelviewer" style="width: {{size}}px;"></div>
-      </div>
+    <div id="npc">
+      <div id="name">{{unitName}}</div>
+      <div id="guild">{{unitTitle}}</div>
+      <div id="model" style="width: {{size}}px;"></div>
     </div>
+
+    <div id="app" v-cloak></div>
 
     <script>
       window.WH = {
@@ -43,11 +43,10 @@
           }
 
           const { zoom, size, fps, modelData } = settings
-          const { unitName, unitTitle } = settings
 
-          const walkPointMin = -size
+          const walkPointMin = size * -1
           const walkPointMax = window.innerWidth
-          const walkPointCenter = Math.floor((walkPointMax / 2) - (size / 2))
+          const walkPointCenter = Math.floor(walkPointMax / 2 - size / 2)
 
           const modelviewer = ref(null)
           const ready = ref(false)
@@ -158,13 +157,13 @@
           const init = () => {
             ready.value = false
 
-            const wrapper = document.querySelector("#mv-wrapper")
+            const npc = document.querySelector("#npc")
 
-            wrapper.style.left = `${currentPoint.value}px`
+            npc.style.left = `${currentPoint.value}px`
 
             modelviewer.value = new WowModelViewer({
               ...modelData,
-              container: jQuery("#modelviewer"),
+              container: jQuery("#model"),
               background: null,
             })
 
@@ -214,7 +213,7 @@
 
             // gsap.ticker.fps(fps)
 
-            const tween = gsap.to("#mv-wrapper", {
+            const tween = gsap.to("#npc", {
               duration: distance / speed,
               left: `${point}px`,
               ease: "none",
@@ -232,10 +231,7 @@
             init()
           })
 
-          return {
-            unitName,
-            unitTitle,
-          }
+          return {}
         },
       })
 
@@ -260,11 +256,11 @@
         overflow: hidden;
       }
 
-      #mv-wrapper {
+      #npc {
         position: absolute;
       }
 
-      #modelviewer > div {
+      #model > div {
         display: none !important;
       }
 
@@ -291,7 +287,7 @@
         "unitTitle": {
           "type": "text",
           "label": "Unit title",
-          "value": "<RwlRwlRwl>"
+          "value": "&lt;RwlRwlRwl&gt;"
         },
         "size": {
           "type": "number",
