@@ -38,7 +38,6 @@
       import {
         createApp,
         ref,
-        watchEffect,
         onMounted,
         nextTick,
       } from "https://cdn.jsdelivr.net/npm/vue@3.2.36/dist/vue.esm-browser.js"
@@ -62,7 +61,6 @@
 
           const modelviewer = ref(null)
           const ready = ref(false)
-          const looping = ref(false)
           const currentPoint = ref(walkPointCenter)
           const animations = [
             "ReadyUnarmed",
@@ -104,13 +102,6 @@
             "Stun",
           ]
 
-          watchEffect(() => {
-            if (!looping.value && ready.value) {
-              looping.value = true
-              loop()
-            }
-          })
-
           const rnd = (min, max) => {
             min = Math.ceil(min)
             max = Math.floor(max)
@@ -120,12 +111,6 @@
           class WowModelViewer extends ZamModelViewer {
             constructor(...args) {
               super(...args)
-
-              this.renderer._updateProgress = this.renderer.updateProgress
-              this.renderer.updateProgress = (...args) => {
-                this.renderer._updateProgress(...args)
-                ready.value = Object.keys(this.renderer.downloads).length === 0
-              }
 
               let now
               let then = Date.now()
@@ -139,6 +124,11 @@
                 if (delta > interval) {
                   then = now - (delta % interval)
                   this.renderer._draw(...args)
+
+                  if (!ready.value) {
+                    ready.value = true
+                    loop()
+                  }
                 }
               }
             }
@@ -167,8 +157,6 @@
           }
 
           const init = () => {
-            ready.value = false
-
             const npc = document.querySelector("#npc")
 
             npc.style.left = `${currentPoint.value}px`
@@ -183,64 +171,56 @@
             modelviewer.value.setCamera(90, 270)
           }
 
-          const loop = () => {
-            if (!ready.value) {
-              looping.value = false
-              return
-            }
-
-            const randomPoint = rnd(walkPointMin, walkPointMax)
-            const randomAnimation = animations[rnd(0, animations.length - 1)]
-            const randomAction = rnd(0, 2)
-
-            if (randomAction === 0) {
-              playAnimation(randomAnimation, 90, rnd(3, 10), wait)
-            } else if (randomAction === 1) {
-              moveTo(randomPoint, 5, wait)
-            } else if (randomAction === 2) {
-              moveTo(randomPoint, 10, wait)
-            }
-          }
-
-          const wait = () => {
-            playAnimation("Stand", 90, rnd(2, 10), loop)
-          }
-
-          const playAnimation = (animation, facing, duration, onEnd) => {
+          const playAnimation = async (animation, facing, duration) => {
             modelviewer.value.setCamera(facing, 270)
             modelviewer.value.playAnimation(animation)
 
-            if (duration > 0) {
-              setTimeout(onEnd, duration * 1000)
-            }
+            await new Promise((resolve) => setTimeout(resolve, duration * 1000))
           }
 
-          const moveTo = (point, speed, onEnd) => {
+          const moveTo = async (point, speed, onEnd) => {
             speed = speed * 18
             const facing = point < currentPoint.value ? 180 : 0
             const animation = speed >= 180 ? "Run" : "Walk"
             const distance = Math.abs(point - currentPoint.value)
 
-            playAnimation(animation, facing, 0, onEnd)
+            playAnimation(animation, facing, 0)
 
             // gsap.ticker.fps(fps)
 
-            const tween = gsap.to("#npc", {
-              duration: distance / speed,
-              left: `${point}px`,
-              ease: "none",
-              onComplete() {
-                currentPoint.value = point
-                onEnd()
-              },
+            await new Promise((resolve) => {
+              gsap.to("#npc", {
+                duration: distance / speed,
+                left: `${point}px`,
+                ease: "none",
+                onComplete() {
+                  currentPoint.value = point
+                  resolve()
+                },
+              })
             })
-
-            modelviewer.value.playAnimation(animation)
           }
 
-          onMounted(async () => {
-            await nextTick()
-            init()
+          const loop = async () => {
+            const randomPoint = rnd(walkPointMin, walkPointMax)
+            const randomAnimation = animations[rnd(0, animations.length - 1)]
+            const randomAction = rnd(0, 2)
+
+            if (randomAction === 0) {
+              await playAnimation(randomAnimation, 90, rnd(3, 10))
+            } else if (randomAction === 1) {
+              await moveTo(randomPoint, 5)
+            } else if (randomAction === 2) {
+              await moveTo(randomPoint, 10)
+            }
+
+            await playAnimation("Stand", 90, rnd(2, 10))
+
+            loop()
+          }
+
+          onMounted(() => {
+            nextTick(() => init())
           })
 
           return {}
