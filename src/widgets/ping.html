@@ -9,43 +9,62 @@
         createApp,
         ref,
       } from "https://cdn.jsdelivr.net/npm/vue@3.2.36/dist/vue.esm-browser.js"
-      import useTmi from "../composables/useTmi.js"
+      import useTmi from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useTmi.js"
 
       const app = createApp({
         setup(props, ctx) {
           const settings = {
-            command: "{{command}}",
-            cooldown: parseInt("{{cooldown}}") * 1000,
-            alert: "{{alert}}",
-            volume: parseInt("{{volume}}") / 100,
+            channel: "{{channel}}".toLowerCase(),
+            username: "{{botUsername}}".toLowerCase(),
+            oauthToken: "{{botToken}}",
+            announceCooldown: parseInt("{{announceCooldown}}") * 1000,
+            alertCooldown: parseInt("{{alertCooldown}}") * 1000,
+            alertSound: "{{alert}}",
+            alertVolume: parseInt("{{volume}}") / 100,
           }
 
-          const { command, cooldown } = settings
-          const { alert, volume } = settings
+          const { username, channel, oauthToken, announceCooldown } = settings
+          const { alertCooldown, alertSound, alertVolume } = settings
 
-          const { client } = useTmi("z0fa")
-          const timer = ref(Date.now())
+          const { client } = useTmi(channel, username, oauthToken)
+          const alertTimer = ref(Date.now())
+          const announceTimer = ref(Date.now())
+          const chatters = ref({})
 
           client.on("message", (channel, tags, message, self) => {
             if (self) {
               return
             }
 
-            if (message.toLowerCase().startsWith(command)) {
-              const now = Date.now()
+            const now = Date.now()
+            const lastAnnounce = now - announceTimer.value
+            const lastAlert = now - alertTimer.value
+            const author = tags.username
 
-              if (now - timer.value < cooldown) {
-                return
-              }
+            chatters[author] = chatters[author] ?? -1
+            chatters[author] = chatters[author] + 1
 
-              timer.value = now
+            if (
+              message.toLowerCase().includes(`@${channel}`) &&
+              lastAlert > alertCooldown
+            ) {
+              alertTimer.value = now
 
-              const audio = new Audio(alert)
+              const audio = new Audio(alertSound)
 
-              audio.volume = volume
+              audio.volume = alertVolume
               audio.play()
+            } else if (chatters[author] === 0 && lastAnnounce < alertCooldown) {
+              announceTimer.value = now
+
+              client.say(
+                channel,
+                `@${author} se lo streamer non legge la chat taggalo nel messaggio per richiamare la sua attenzione`
+              )
             }
           })
+
+          return {}
         },
       })
 
@@ -60,29 +79,47 @@
 
     <!--
       {
-        "command": {
+        "channel": {
           "type": "text",
-          "label": "Command",
-          "value": "!ping"
+          "label": "Channel name",
+          "value": "changeme"
         },
-        "cooldown": {
+        "botUsername": {
+          "type": "text",
+          "label": "BOT username",
+          "value": "changeme"
+        },
+        "botToken": {
+          "type": "text",
+          "label": "BOT auth token",
+          "value": "changeme"
+        },
+        "announceCooldown": {
           "type": "slider",
-          "label": "Cooldown (in seconds)",
+          "label": "Announce cooldown (in seconds)",
           "value": 10,
           "min": 1,
           "max": 120,
           "step": 1
         },
-        "soundAlert": {
+        "alertSound": {
           "type": "sound-input",
           "label": "Sound alert"
         },
-        "volume": {
+        "alertVolume": {
           "type": "slider",
           "label": "Volume",
           "value": 80,
           "min": 1,
           "max": 100,
+          "step": 1
+        },
+        "alertCooldown": {
+          "type": "slider",
+          "label": "Alert cooldown (in seconds)",
+          "value": 10,
+          "min": 1,
+          "max": 120,
           "step": 1
         }
       }
