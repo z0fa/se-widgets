@@ -55,8 +55,8 @@
 
           const { zoom, size, fps, modelData } = settings
 
-          const walkPointMin = size * -1
-          const walkPointMax = window.innerWidth
+          const walkPointMin = 0
+          const walkPointMax = window.innerWidth - size
           const walkPointCenter = Math.floor(walkPointMax / 2 - size / 2)
 
           const modelviewer = ref(null)
