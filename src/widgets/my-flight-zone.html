@@ -6,6 +6,19 @@
       <img id="airplane" src="{{image}}" alt="" v-if="animating" />
     </div>
 
+    <script>
+      console.log(`
+🛫 Use this function to extract geo bounds from FlightRadar24:
+
+(() => {
+  const { north, east, south, west } = map.getBounds().toJSON()
+  const r = (x) => x.toFixed(3)
+
+  prompt("", \`${"${r(north)},${r(south)},${r(west)},${r(east)}"}\`)
+})()
+      `)
+    </script>
+
     <script type="module">
       import {
         createApp,
@@ -23,16 +36,13 @@
             username: "{{botUsername}}".toLowerCase(),
             oauthToken: "{{botToken}}",
             checkDelay: parseInt("{{checkDelay}}") * 1000,
-            geoX1: parseFloat("{{geoX1}}"),
-            geoY1: parseFloat("{{geoY1}}"),
-            geoX2: parseFloat("{{geoX2}}"),
-            geoY2: parseFloat("{{geoY2}}"),
+            geoBounds: "{{geoBounds}}".split(",").map((x) => parseFloat(x)),
             soundAlert: "{{soundAlert}}",
           }
 
           const { channel, username, oauthToken } = settings
           const { checkDelay, soundAlert } = settings
-          const { geoX1, geoY1, geoX2, geoY2 } = settings
+          const [geoX1, geoX2, geoY1, geoY2] = settings.geoBounds
 
           const { updateItems, addedItems, removedItems } = useArrayInOut()
           const { client } = useTmi(channel, username, oauthToken)
@@ -173,29 +183,10 @@
           "max": 60,
           "step": 1
         },
-        "geoOpen": {
+        "geoBounds": {
           "type": "text",
-          "label": "Geo picker: shorturl.at/svHNU"
-        },
-        "geoX1": {
-          "type": "number",
-          "label": "Geo X1",
-          "value": -1
-        },
-        "geoY1": {
-          "type": "number",
-          "label": "Geo Y1",
-          "value": -1
-        },
-        "geoX2": {
-          "type": "number",
-          "label": "Geo X2",
-          "value": -1
-        },
-        "geoY2": {
-          "type": "number",
-          "label": "Geo Y2",
-          "value": -1
+          "label": "Geo bounds (x1,x2,y1,y2)",
+          "value": "45.714,45.491,8.296,8.573"
         },
         "testPlane": {
           "type": "button",
