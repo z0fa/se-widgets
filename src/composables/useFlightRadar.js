@@ -15,11 +15,13 @@ export default function useFlightRadar() {
         maxage: 14400,
         gliders: 1,
         stats: 1,
+        now: Date.now(),
       }
     )}`
 
     const response = await fetch(
-      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+      { cache: "no-store" }
     )
       .then((r) => r.json())
       .then((r) => JSON.parse(r.contents))
