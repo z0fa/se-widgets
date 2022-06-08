@@ -49,15 +49,20 @@
           const { scan } = useFlightRadar()
           const { onWidgetButtonClick } = useStreamElements()
           const animating = ref(false)
+          const spotCount = ref(0)
 
           const announce = (plate, id) => {
             if (animating.value) {
               return
             }
 
+            spotCount.value++
+
             client.say(
               channel,
-              `Aereo avvistato! 🛩️ ${`https://www.flightradar24.com/${plate}/${id}`}`
+              `🛩️ Aereo avvistato! (${
+                spotCount.value
+              }) ${`https://www.flightradar24.com/${plate}/${id}`}`
             )
 
             animating.value = true
