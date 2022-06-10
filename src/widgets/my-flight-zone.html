@@ -38,10 +38,11 @@
             checkDelay: parseInt("{{checkDelay}}") * 1000,
             geoBounds: "{{geoBounds}}".split(",").map((x) => parseFloat(x)),
             soundAlert: "{{soundAlert}}",
+            soundVolume: parseInt("{{soundVolume}}") / 100,
           }
 
           const { channel, username, oauthToken } = settings
-          const { checkDelay, soundAlert } = settings
+          const { checkDelay, soundAlert, soundVolume } = settings
           const [geoX1, geoX2, geoY1, geoY2] = settings.geoBounds
 
           const { updateItems, addedItems, removedItems } = useArrayInOut()
@@ -67,7 +68,7 @@
 
             animating.value = true
             const audio = new Audio(soundAlert)
-            audio.volume = 0.4
+            audio.volume = soundVolume
             audio.play()
             setTimeout(() => {
               animating.value = false
@@ -164,6 +165,14 @@
         "soundAlert": {
           "type": "sound-input",
           "label": "Sound alert"
+        },
+        "soundVolume": {
+          "type": "slider",
+          "label": "Sound volume",
+          "value": 10,
+          "min": 0,
+          "max": 100,
+          "step": 1
         },
         "channel": {
           "type": "text",
