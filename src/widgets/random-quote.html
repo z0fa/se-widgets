@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head></head>
+  <body>
+    <div id="app" v-cloak></div>
+
+    <script type="module">
+      import {
+        createApp,
+        ref,
+      } from "https://cdn.jsdelivr.net/npm/vue@3.2.36/dist/vue.esm-browser.js"
+      import useTmi from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useTmi.js"
+
+      const app = createApp({
+        setup(props, ctx) {
+          const settings = {
+            channel: "{{channel}}".toLowerCase(),
+            username: "{{botUsername}}".toLowerCase(),
+            oauthToken: "{{botToken}}",
+
+            quotes: "{{quotes}}"
+              .split(";")
+              .map((m) => m.trim())
+              .filter((m) => !!m),
+            cmdName: "{{cmdName}}",
+            cmdCooldown: parseInt("{{cmdCooldown}}") * 1000,
+          }
+
+          const { channel, username, oauthToken } = settings
+          const { quotes, cmdName, cmdCooldown } = settings
+
+          const { client } = useTmi(channel, username, oauthToken)
+          const quoteTimer = ref(0)
+
+          client.on("message", (channel, tags, message, self) => {
+            if (self) {
+              return
+            }
+
+            const now = Date.now()
+            const lastQuote = now - quoteTimer.value
+
+            if (
+              message.toLowerCase().startsWith(cmdName) &&
+              lastQuote > cmdCooldown
+            ) {
+              quoteTimer.value = now
+
+              const msg = quotes[Math.floor(Math.random() * quotes.length)]
+              client.say(channel, msg)
+            }
+          })
+
+          return {}
+        },
+      })
+
+      app.mount("#app")
+    </script>
+
+    <style>
+      [v-cloak] {
+        display: none;
+      }
+    </style>
+
+    <!--
+      {
+        "channel": {
+          "type": "text",
+          "label": "Channel name",
+          "value": "changeme"
+        },
+        "botUsername": {
+          "type": "text",
+          "label": "BOT username",
+          "value": "changeme"
+        },
+        "botToken": {
+          "type": "text",
+          "label": "BOT auth token",
+          "value": "changeme"
+        },
+        "quotes": {
+          "type": "text",
+          "label": "Quotes (semicolon separated)",
+          "value": "Hello World;Hello Universe"
+        },
+        "cmdName": {
+          "type": "text",
+          "label": "Command name",
+          "value": "!quote"
+        },
+        "cmdCooldown": {
+          "type": "slider",
+          "label": "Command cooldown (in seconds)",
+          "value": 10,
+          "min": 0,
+          "max": 100,
+          "step": 1
+        }
+      }
+    -->
+  </body>
+</html>
