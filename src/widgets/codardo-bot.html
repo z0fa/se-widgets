@@ -37,12 +37,14 @@
           const { onWidgetButtonClick } = useStreamElements()
           const cleverBotMode = ref(false)
 
-          const generateResponse = async (message = "parlami di qualcosa") => {
-            const msg = message.toLowerCase().replace(`@${username}`, "").trim()
+          const generateResponse = async (message) => {
+            message = message || ""
+            message = message.toLowerCase().replace(`@${username}`, "")
+            message = message.trim() || "parlami di qualcosa"
 
             return fetch(
               `https://se-widgets.vercel.app/api/cleverbot?${new URLSearchParams(
-                { message: msg }
+                { message }
               )}`
             ).then((response) => response.text())
           }
