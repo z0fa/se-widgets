@@ -35,10 +35,23 @@
           const { generateMessage } = useCoDArdi(messages)
           const { client } = useTmi(channel, username, oauthToken)
           const { onWidgetButtonClick } = useStreamElements()
+          const cleverBotMode = ref(false)
 
-          const speak = async (client, channel, tts) => {
+          const generateResponse = async (message = "parlami di qualcosa") => {
+            const msg = message.toLowerCase().replace(`@${username}`, "").trim()
+
+            return fetch(
+              `https://se-widgets.vercel.app/api/cleverbot?${new URLSearchParams(
+                { message: msg }
+              )}`
+            ).then((response) => response.text())
+          }
+
+          const speak = async (client, channel, tts, message) => {
             try {
-              const msg = await generateMessage()
+              const msg = cleverBotMode.value
+                ? await generateResponse(message)
+                : await generateMessage()
               client.say(channel, msg)
 
               if (tts) {
@@ -62,15 +75,21 @@
               return
             }
 
-            if (
+            if (message.toLowerCase().startsWith("!cleverbot")) {
+              cleverBotMode.value = !cleverBotMode.value
+              client.say(
+                channel,
+                `Modalità CleverBot ${cleverBotMode.value ? "ON" : "OFF"}`
+              )
+            } else if (
               message.toLowerCase().includes(`@${username}`) &&
               message.toLowerCase().includes("parlami")
             ) {
-              speak(client, channel, true)
+              speak(client, channel, true, message)
             } else if (message.toLowerCase().includes(`@${username}`)) {
-              speak(client, channel, false)
+              speak(client, channel, false, message)
             } else if (replyChance > 0 && Math.random() < replyChance) {
-              speak(client, channel, false)
+              speak(client, channel, false, message)
             }
           })
 

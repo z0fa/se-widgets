@@ -5,5 +5,8 @@
   },
   "devDependencies": {
     "http-server": "^14.1.0"
+  },
+  "dependencies": {
+    "cleverbot-free": "^1.1.11"
   }
 }
