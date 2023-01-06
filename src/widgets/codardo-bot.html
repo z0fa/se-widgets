@@ -88,16 +88,9 @@
               }
 
               if (cmd === "disegna") {
-                if (mode.value === "codardo") {
-                  client.say(
-                    channel,
-                    "Bello essere un CoDArdo e non saper disegnare"
-                  )
-                } else {
-                  ChatGPT.draw(params.join(" ")).then((url) => {
-                    client.say(channel, `Ecco il mio disegno: ${url}`)
-                  })
-                }
+                ChatGPT.draw(params.join(" ")).then((url) => {
+                  client.say(channel, `Ecco il mio disegno: ${url}`)
+                })
               }
 
               return
