@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head></head>
+  <body>
+    <div class="alert">
+      <div class="alert-text">follower</div>
+      <div class="alert-name">{{name}}</div>
+      <img
+        src="https://cdn.streamelements.com/uploads/4e458716-2e8e-4bc7-b50a-bc054e8d7d97.png"
+        alt=""
+        class="alert-image"
+      />
+    </div>
+
+    <style>
+      @font-face {
+        font-family: "Edge of the Galaxy";
+        font-style: normal;
+        font-weight: 400;
+        src: local("Edge of the Galaxy"),
+          url("https://fonts.cdnfonts.com/s/57488/EdgeOfTheGalaxyPoster-3zRAp.woff")
+            format("woff");
+      }
+
+      .alert {
+        position: relative;
+        width: 367px;
+        height: 161px;
+      }
+
+      .alert-image {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .alert-text,
+      .alert-name {
+        font-family: "Edge of the Galaxy", sans-serif;
+        position: absolute;
+        width: 170px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        transform: translateX(-50%);
+        color: #081346;
+        font-size: 24px;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        left: 50%;
+        top: 5px;
+      }
+
+      .alert-name {
+        font-size: 75px;
+        color: #fff;
+        top: 65px;
+        width: 335px;
+        background: linear-gradient(
+          180deg,
+          #ffffff 31.61%,
+          #8c96af 49.33%,
+          #8c96af 63.06%,
+          #ffffff 76.88%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-fill-color: transparent;
+        -webkit-text-stroke-width: 1px;
+        -webkit-text-stroke-color: #081346;
+      }
+    </style>
+  </body>
+</html>

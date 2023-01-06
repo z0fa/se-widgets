@@ -30,7 +30,7 @@ export default function useCoDArdi(msgSource) {
     return text.split(/\s+/).slice(0, max).join(" ").trim()
   }
 
-  const generateMessage = async () => {
+  const speak = async () => {
     if (!ready.value) {
       await init()
     }
@@ -39,6 +39,6 @@ export default function useCoDArdi(msgSource) {
   }
 
   return {
-    generateMessage,
+    speak,
   }
 }

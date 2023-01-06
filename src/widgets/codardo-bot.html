@@ -14,6 +14,7 @@
       import useTmi from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useTmi.js"
       import useStreamElements from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useStreamElements.js"
       import useCoDArdi from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useCoDArdi.js"
+      import useChatGPT from "https://cdn.jsdelivr.net/gh/z0fa/se-widgets/src/composables/useChatGPT.js"s"
 
       const app = createApp({
         setup(props, ctx) {
@@ -21,6 +22,8 @@
             channel: "{{channel}}".toLowerCase(),
             username: "{{botUsername}}".toLowerCase(),
             oauthToken: "{{botToken}}",
+            gptToken: "{{gptToken}}",
+            tuToken: "{{tuToken}}",
             messages: "{{messages}}",
             replyChance: parseInt("{{replyChance}}") / 100,
             speakChance: parseInt("{{speakChance}}") / 100,
@@ -29,36 +32,27 @@
           }
 
           const { username, channel, oauthToken } = settings
+          const { gptToken, tuToken } = settings
           const { messages } = settings
           const { replyChance, speakChance, speakDelay, ttsChance } = settings
 
-          const { generateMessage } = useCoDArdi(messages)
+          const CoDArdi = useCoDArdi(messages)
+          const ChatGPT = useChatGPT(gptToken, tuToken)
           const { client } = useTmi(channel, username, oauthToken)
           const { onWidgetButtonClick } = useStreamElements()
-          const cleverBotMode = ref(false)
+          const mode = ref("codardo")
 
-          const generateResponse = async (message) => {
-            message = message || ""
-            message = message.toLowerCase().replace(`@${username}`, "")
-            message = message.trim() || "parlami di qualcosa"
-
-            return fetch(
-              `https://se-widgets.vercel.app/api/cleverbot?${new URLSearchParams(
-                { message }
-              )}`
-            ).then((response) => response.text())
-          }
-
-          const speak = async (client, channel, tts, message) => {
+          const speak = async (client, channel, message) => {
             try {
-              const msg = cleverBotMode.value
-                ? await generateResponse(message)
-                : await generateMessage()
-              client.say(channel, msg)
+              let toSay = ""
 
-              if (tts) {
-                speechSynthesis.speak(new SpeechSynthesisUtterance(msg))
+              if (mode.value === "codardo") {
+                toSay = await CoDArdi.speak()
+              } else if (mode.value === "chatgpt") {
+                toSay = await ChatGPT.speak(message)
               }
+
+              client.say(channel, toSay)
             } catch (error) {
               console.error(error)
             }
@@ -68,7 +62,7 @@
             const { field } = data
 
             if (field === "testMessage") {
-              speak(client, channel, Math.random() > 0.5)
+              speak(client, channel, "Raccontami qualcosa di molto breve")
             }
           })
 
@@ -77,27 +71,48 @@
               return
             }
 
-            if (message.toLowerCase().startsWith("!cleverbot")) {
-              cleverBotMode.value = !cleverBotMode.value
-              client.say(
-                channel,
-                `Modalità CleverBot ${cleverBotMode.value ? "ON" : "OFF"}`
-              )
-            } else if (
-              message.toLowerCase().includes(`@${username}`) &&
-              message.toLowerCase().includes("parlami")
-            ) {
-              speak(client, channel, true, message)
-            } else if (message.toLowerCase().includes(`@${username}`)) {
-              speak(client, channel, false, message)
+            if (message.toLowerCase().startsWith("!")) {
+              const [_, ...params] = message.split(" ")
+              const cmd = _.toLowerCase().replace("!", "")
+
+              if (cmd === "mode") {
+                const [m] = params
+
+                if (m === "codardo") {
+                  mode.value = m
+                  client.say(channel, "Modalità CoDArdo attivata")
+                } else if (m === "chatgpt") {
+                  mode.value = m
+                  client.say(channel, "Modalità ChatGTP attivata")
+                }
+              }
+
+              if (cmd === "disegna") {
+                if (mode.value === "codardo") {
+                  client.say(
+                    channel,
+                    "Bello essere un CoDArdo e non saper disegnare"
+                  )
+                } else {
+                  ChatGPT.draw(params.join(" ")).then((url) => {
+                    client.say(channel, `Ecco il mio disegno: ${url}`)
+                  })
+                }
+              }
+
+              return
+            }
+
+            if (message.toLowerCase().includes(`@${username}`)) {
+              speak(client, channel, message)
             } else if (replyChance > 0 && Math.random() < replyChance) {
-              speak(client, channel, false, message)
+              speak(client, channel, message)
             }
           })
 
           setInterval(() => {
             if (speakChance > 0 && Math.random() < speakChance) {
-              speak(client, channel, ttsChance > 0 && Math.random() < ttsChance)
+              speak(client, channel, "Raccontami qualcosa di molto breve")
             }
           }, speakDelay)
 
@@ -129,6 +144,16 @@
         "botToken": {
           "type": "text",
           "label": "BOT auth token",
+          "value": "changeme"
+        },
+        "gptToken": {
+          "type": "text",
+          "label": "ChatGPT api token",
+          "value": "changeme"
+        },
+        "tuToken": {
+          "type": "text",
+          "label": "TinyUrl api token",
           "value": "changeme"
         },
         "messages": {
