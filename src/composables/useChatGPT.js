@@ -1,5 +1,5 @@
 export default function useChatGPT(gptToken, tuToken) {
-  const speak = async (message) => {
+  const speak = async (message, maxTokens = 50) => {
     const response = await fetch("https://api.openai.com/v1/completions", {
       method: "post",
       headers: {
@@ -9,7 +9,7 @@ export default function useChatGPT(gptToken, tuToken) {
       body: JSON.stringify({
         model: "text-davinci-003",
         prompt: message,
-        max_tokens: 4000,
+        max_tokens: maxTokens,
         temperature: 1.0,
       }),
     }).then((r) => r.json())

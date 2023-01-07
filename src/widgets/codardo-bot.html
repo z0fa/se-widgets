@@ -49,7 +49,7 @@
               if (mode.value === "codardo") {
                 toSay = await CoDArdi.speak()
               } else if (mode.value === "chatgpt") {
-                toSay = await ChatGPT.speak(message)
+                toSay = await ChatGPT.speak(message, 50)
               }
 
               client.say(channel, toSay)
