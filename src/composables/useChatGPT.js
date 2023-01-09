@@ -1,10 +1,10 @@
-export default function useChatGPT(gptToken, tuToken) {
+export default function useChatGPT(openaiToken, pasteeeToken, imgurToken) {
   const speak = async (message, maxTokens = 50) => {
     const response = await fetch("https://api.openai.com/v1/completions", {
       method: "post",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${gptToken}`,
+        Authorization: `Bearer ${openaiToken}`,
       },
       body: JSON.stringify({
         model: "text-davinci-003",
@@ -14,7 +14,26 @@ export default function useChatGPT(gptToken, tuToken) {
       }),
     }).then((r) => r.json())
 
-    return response?.choices?.[0]?.text ?? ""
+    let toRet = response?.choices?.[0]?.text ?? ""
+
+    if (toRet.length > 200) {
+      const url = await fetch("https://api.paste.ee/v1/pastes", {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Auth-Token": pasteeeToken,
+        },
+        body: JSON.stringify({
+          sections: [{ contents: toRet }],
+        }),
+      })
+        .then((r) => r.json())
+        .then((r) => r.link)
+
+      toRet = `La risposta è troppo lunga, l'ho caricata qui: ${url}`
+    }
+
+    return toRet
   }
 
   const draw = async (message) => {
@@ -24,7 +43,7 @@ export default function useChatGPT(gptToken, tuToken) {
         method: "post",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${gptToken}`,
+          Authorization: `Bearer ${openaiToken}`,
         },
         body: JSON.stringify({
           prompt: message,
@@ -36,18 +55,18 @@ export default function useChatGPT(gptToken, tuToken) {
       .then((r) => r.json())
       .then((r) => r.data[0].url)
 
-    const url = await fetch("https://api.tinyurl.com/create", {
+    const formData = new FormData()
+    formData.append("image", longUrl)
+
+    const url = await fetch("https://api.imgur.com/3/image", {
       method: "post",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${tuToken}`,
+        Authorization: `Client-ID ${imgurToken}`,
       },
-      body: JSON.stringify({
-        url: longUrl,
-      }),
+      body: formData,
     })
       .then((r) => r.json())
-      .then((r) => r.data.tiny_url)
+      .then((r) => r.data.link)
 
     return url
   }
